@@ -1,0 +1,41 @@
+[
+  {
+    "name": "User",
+    "key": "user",
+    "description": "User",
+    "permissions": [
+
+      {
+        "action": "create",
+        "subject": "user",
+        "conditions": {},
+        "description": "Create user"
+      },
+      {
+        "action": "read",
+        "subject": "user",
+        "conditions": {},
+        "description": "Read user"
+      },
+      {
+        "action": "update",
+        "subject": "user",
+        "conditions": {},
+        "description": "Update user"
+      },
+      {
+        "action": "delete",
+        "subject": "user",
+        "conditions": {},
+        "description": "Delete user"
+      },
+      {
+        "action": "manage",
+        "subject": "user",
+        "conditions": {},
+        "description": "Manage user"
+      }
+    
+    ]
+  }
+]

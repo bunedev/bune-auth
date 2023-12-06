@@ -6,6 +6,8 @@ import {
   ApolloFederationDriverConfig,
 } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
+import { RolesModule } from './roles/roles.module';
+import { PermissionsModule } from './permissions/permissions.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { GraphQLModule } from '@nestjs/graphql';
         federation: 2,
       },
     }),
+    RolesModule,
+    PermissionsModule,
   ],
 })
 export class AppModule {}

@@ -13,6 +13,84 @@ datasource db {
 model User {
   id        String   @id @default(uuid())
   name      String?
+  email     String  @default("") 
+  username  String  @default("") 
+  passwordHash String @default("") 
+  profilePicture   String?
+  dateOfBirth     DateTime?
+  phone     String? 
+  status    UserStatus  @default(INACTIVE)
+  twoFactorEnabled Boolean?
+  emailVerified Boolean?
+  lastLogin DateTime?
+  loginMethod LoginMethod @default(LOCAL)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  roleId    String?
+  role      Role?    @relation(fields: [roleId], references: [id])
+}
+
+model Role {
+  id String @id @default(uuid())
+  key String  @unique
+  name String?
+  description String?
+  status RoleStatus @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  permissions Permission[]
+  users     User[]
+}
+
+model Permission {
+  id          String       @id @default(uuid())
+  action      String? 
+  subject    String? 
+  inverted    Boolean? @default(false)
+  conditions Json?    
+  reason     String? @db.Text()
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  status      PermissionStatus? @default(ACTIVE)
+  roles       Role[] 
+}
+
+
+enum LoginMethod {
+  LOCAL // email and password
+  GOOGLE 
+  FACEBOOK
+  GITHUB
+  WEIBO
+  TWITTER
+  LINE
+  MICROSOFT
+  LINKEDIN
+  AMAZON
+  WECHAT
+}
+
+enum UserStatus {
+  ACTIVE  // User active
+  INACTIVE  // The account exists but is not currently in use. This could be for users who haven't completed certain steps like email verification
+  SUSPENDED // The account has been temporarily disabled due to reasons such as violating terms of service or other policies
+  LOCKED   // The account is locked, possibly due to multiple failed login attempts or security concerns
+  CLOSED // The account has been permanently closed, either by the user or by the system (in case of long-term inactivity or compliance reasons)
+  ARCHIVED // The account is no longer active but has been archived for record-keeping purposes.
+}
+
+enum RoleStatus {
+  ACTIVE  // Role active
+  INACTIVE // The role exists but is not currently available for assignment. This can be used for roles that are temporarily not in use
+  DEPRECATED // Indicates that the role is outdated or no longer relevant, but still exists for historical or legacy reasons.
+  LOCKED // The role is locked from being assigned to any new users, possibly due to security or organizational changes.
+  ARCHIVED //The role is no longer active but is kept for record-keeping or audit purposes.
+}
+
+enum PermissionStatus {
+  ACTIVE // Indicates that the permission is currently active and can be assigned to roles.
+  INACTIVE // The permission exists but is not currently available for assignment. Useful for temporarily disabling a permission without removing it
+  DEPRECATED // Signifies that the permission is outdated or no longer relevant for new assignments, but still exists for legacy support.
+  ARCHIVED //The permission is no longer in active use but is retained for record-keeping or audit purposes.
 }
