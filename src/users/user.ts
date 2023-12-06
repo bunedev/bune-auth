@@ -1,7 +1,6 @@
 import { Directive, Field, ID, ObjectType } from '@nestjs/graphql';
-import { EnumUserStatus } from './base/enums/EnumUserStatus';
 import { EnumLoginMethod } from './base/enums/EnumLoginMethod';
-import { Role } from 'src/roles/role';
+import { EnumUserStatus } from './base/enums/EnumUserStatus';
 
 @ObjectType()
 @Directive('@key(fields: "id")')
@@ -30,8 +29,8 @@ export class User {
   @Field({ nullable: true })
   phone?: string;
 
-  @Field(() => Role, { nullable: false })
-  roles: Role;
+  @Field(() => String, { nullable: false })
+  roleId: string;
 
   @Field()
   status: EnumUserStatus;
