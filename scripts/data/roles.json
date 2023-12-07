@@ -1,7 +1,7 @@
 [
   {
     "name": "User",
-    "key": "user",
+    "key": "USER",
     "description": "User",
     "permissions": [
 

@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { GqlAllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { GqlAllExceptionsFilter } from 'bune-common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
