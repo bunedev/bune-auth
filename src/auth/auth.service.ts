@@ -84,9 +84,9 @@ export class AuthService {
     // Check if the user exists
     if (!user) {
       throw createGraphQLError(
-        HttpStatus.UNAUTHORIZED,
-        ErrorMessages.AuthenticationFailed,
-        ErrorCodes.AuthenticationFailed,
+        HttpStatus.BAD_REQUEST,
+        ErrorMessages.UserNotFound,
+        ErrorCodes.UserNotFound,
       );
     }
 
