@@ -1,10 +1,12 @@
-import { HttpCode, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SignupArgs } from './base/args/SignupArgs';
 import { User, UserStatus } from '@prisma/client';
 import { RoleKeyDefault } from 'src/common/constants/app';
-import { ErrorCodes, ErrorMessages } from 'src/common/constants/errors';
+import { ErrorCodes, ErrorMessages } from 'bune-common';
 import { createGraphQLError } from 'bune-common';
+import { LoginArgs } from './base/args/LoginArgs';
+import { BunUtils } from '../utils/bun';
 
 @Injectable()
 export class AuthService {
@@ -16,12 +18,9 @@ export class AuthService {
    * @param args - The arguments used to create the user record.
    * @returns A Promise that resolves to the newly created user record.
    */
-  async create(args: SignupArgs): Promise<User> {
+  async signup(args: SignupArgs): Promise<User> {
     const data = args.data;
-    const passwordHash = await Bun.password.hash(data.password, {
-      algorithm: 'bcrypt',
-      cost: 10, // number between 4-31
-    });
+    const passwordHash = await BunUtils.hashPassword(data.password);
     const username = data.email.split('@')[0];
     // get role id by role default for user
     const roleUser = await this.prisma.role.findFirst({
@@ -29,7 +28,6 @@ export class AuthService {
         key: RoleKeyDefault.USER,
       },
     });
-    console.log('roleUser', roleUser);
     if (!roleUser) {
       throw createGraphQLError(
         HttpStatus.BAD_REQUEST,
@@ -65,5 +63,55 @@ export class AuthService {
         dateOfBirth: data.dateOfBirth,
       },
     });
+  }
+
+  /**
+   * Login a user with the provided credentials.
+   *
+   * @param args - The arguments used for user login.
+   * @returns A Promise that resolves to the logged-in user.
+   */
+  async login(args: LoginArgs): Promise<User> {
+    const data = args.data;
+
+    // Find the user by email
+    const user = await this.prisma.user.findFirst({
+      where: {
+        email: data.email,
+      },
+    });
+
+    // Check if the user exists
+    if (!user) {
+      throw createGraphQLError(
+        HttpStatus.UNAUTHORIZED,
+        ErrorMessages.AuthenticationFailed,
+        ErrorCodes.AuthenticationFailed,
+      );
+    }
+
+    const isPasswordValid = await BunUtils.verifyPassword(
+      data.password,
+      user.passwordHash,
+    );
+
+    if (!isPasswordValid) {
+      throw createGraphQLError(
+        HttpStatus.UNAUTHORIZED,
+        ErrorMessages.PasswordInvalid,
+        ErrorCodes.PasswordInvalid,
+      );
+    }
+
+    // Check if the user's status is active
+    if (user.status !== UserStatus.ACTIVE) {
+      throw createGraphQLError(
+        HttpStatus.FORBIDDEN,
+        ErrorMessages.UserNotActive,
+        ErrorCodes.UserNotActive,
+      );
+    }
+
+    return user;
   }
 }
