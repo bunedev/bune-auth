@@ -17,9 +17,6 @@ export class User {
   @Field()
   username: string;
 
-  @Field()
-  passwordHash: string;
-
   @Field({ nullable: true })
   profilePicture?: string;
 

@@ -3,14 +3,26 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { SignupArgs } from './base/args/SignupArgs';
 import { User, UserStatus } from '@prisma/client';
 import { RoleKeyDefault } from 'src/common/constants/app';
-import { ErrorCodes, ErrorMessages } from 'bune-common';
+import {
+  CACHE_TTL,
+  ErrorCodes,
+  ErrorMessages,
+  randomNumber,
+} from 'bune-common';
 import { createGraphQLError } from 'bune-common';
 import { LoginArgs } from './base/args/LoginArgs';
 import { BunUtils } from '../utils/bun';
+import { SendOtpArgs } from './base/args/SendOtpInput';
+import { RedisService } from 'src/redis/redis.service';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class AuthService {
-  constructor(protected readonly prisma: PrismaService) {}
+  constructor(
+    protected readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
+    private readonly mailService: MailService,
+  ) {}
 
   /**
    * Create a new user record with the provided arguments.
@@ -20,6 +32,23 @@ export class AuthService {
    */
   async signup(args: SignupArgs): Promise<User> {
     const data = args.data;
+
+    const code = await this.redisService.get(`signup_${data.email}`);
+    console.log(code);
+    if (code! || code != data.code) {
+      throw createGraphQLError(
+        HttpStatus.BAD_REQUEST,
+        ErrorMessages.InvalidOTP,
+        ErrorCodes.InvalidOTP,
+      );
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        email: data.email,
+      },
+    });
+
     const passwordHash = await BunUtils.hashPassword(data.password);
     const username = data.email.split('@')[0];
     // get role id by role default for user
@@ -35,18 +64,26 @@ export class AuthService {
         ErrorCodes.RoleNotFound,
       );
     }
-    // check existed
-    const user = await this.prisma.user.findFirst({
-      where: {
-        email: data.email,
-      },
-    });
-    if (user) {
-      throw createGraphQLError(
-        HttpStatus.BAD_REQUEST,
-        ErrorMessages.UserExisted,
-        ErrorCodes.UserExisted,
-      );
+
+    if (user && user.status === UserStatus.INACTIVE) {
+      return this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          role: {
+            connect: {
+              id: roleUser.id,
+            },
+          },
+          status: UserStatus.INACTIVE,
+          passwordHash: passwordHash,
+          username: username,
+          phone: data.phone,
+          email: data.email,
+          dateOfBirth: new Date(data.dateOfBirth),
+        },
+      });
     }
     return this.prisma.user.create({
       data: {
@@ -60,7 +97,7 @@ export class AuthService {
         username: username,
         phone: data.phone,
         email: data.email,
-        dateOfBirth: data.dateOfBirth,
+        dateOfBirth: new Date(data.dateOfBirth),
       },
     });
   }
@@ -82,11 +119,11 @@ export class AuthService {
     });
 
     // Check if the user exists
-    if (!user) {
+    if (!user || (user && user.status === UserStatus.INACTIVE)) {
       throw createGraphQLError(
-        HttpStatus.BAD_REQUEST,
-        ErrorMessages.UserNotFound,
-        ErrorCodes.UserNotFound,
+        HttpStatus.UNAUTHORIZED,
+        ErrorMessages.AccountNotRegister,
+        ErrorCodes.AccountNotRegister,
       );
     }
 
@@ -103,15 +140,61 @@ export class AuthService {
       );
     }
 
-    // Check if the user's status is active
-    if (user.status !== UserStatus.ACTIVE) {
-      throw createGraphQLError(
-        HttpStatus.FORBIDDEN,
-        ErrorMessages.UserNotActive,
-        ErrorCodes.UserNotActive,
-      );
+    // Check the user status and handle different cases
+    switch (user.status) {
+      case UserStatus.SUSPENDED:
+        throw createGraphQLError(
+          HttpStatus.UNAUTHORIZED,
+          ErrorMessages.UserSuspended,
+          ErrorCodes.UserSuspended,
+        );
+      case UserStatus.LOCKED:
+        throw createGraphQLError(
+          HttpStatus.UNAUTHORIZED,
+          ErrorMessages.UserLocked,
+          ErrorCodes.UserLocked,
+        );
+      case UserStatus.CLOSED:
+        throw createGraphQLError(
+          HttpStatus.UNAUTHORIZED,
+          ErrorMessages.UserClosed,
+          ErrorCodes.UserClosed,
+        );
+      case UserStatus.ARCHIVED:
+        throw createGraphQLError(
+          HttpStatus.UNAUTHORIZED,
+          ErrorMessages.UserArchived,
+          ErrorCodes.UserArchived,
+        );
     }
+    //  update last login time
+    await this.prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        lastLogin: new Date(),
+      },
+    });
 
     return user;
+  }
+
+  async sendOTP(args: SendOtpArgs): Promise<boolean> {
+    const data = args.data;
+    const code = randomNumber(6);
+    await this.redisService.set(
+      `signup_${data.email}`,
+      code,
+      CACHE_TTL.FIVE_MINUTES,
+    );
+    await this.mailService.userRegister({
+      data: {
+        code: code.toString(),
+        subject: `Register Account`,
+      },
+      to: data.email,
+    });
+    return true;
   }
 }

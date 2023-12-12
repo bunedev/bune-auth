@@ -1,12 +1,11 @@
-import { InputType, Field } from '@nestjs/graphql';
 import {
   IsNotEmpty,
   IsString,
   IsOptional,
-  IsDate,
-  Length,
   MinLength,
+  IsISO8601,
 } from 'class-validator';
+import { Field, InputType } from '@nestjs/graphql';
 
 @InputType()
 class SignupInput {
@@ -31,10 +30,14 @@ class SignupInput {
   })
   password: string;
 
+  @Field()
+  @IsNotEmpty({ message: 'Code is required' })
+  code: number;
+
   @Field({ nullable: true })
   @IsOptional()
-  @IsDate({ message: 'Date of Birth must be a valid date' })
-  dateOfBirth?: Date;
+  @IsISO8601({}, { message: 'Date of Birth must be in the format YYYY-MM-DD' })
+  dateOfBirth?: string;
 
   @Field({ nullable: true })
   @IsOptional()
