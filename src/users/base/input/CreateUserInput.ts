@@ -1,4 +1,4 @@
-import { InputType, Field, Boolean } from '@nestjs/graphql';
+import { InputType, Field } from '@nestjs/graphql';
 import {
   IsNotEmpty,
   IsString,

@@ -34,7 +34,6 @@ export class AuthService {
     const data = args.data;
 
     const code = await this.redisService.get(`signup_${data.email}`);
-    console.log(code);
     if (code! || code != data.code) {
       throw createGraphQLError(
         HttpStatus.BAD_REQUEST,

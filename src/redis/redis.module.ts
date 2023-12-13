@@ -11,7 +11,7 @@ import { RedisService } from './redis.service';
           host: Bun.env.REDIS_HOST,
           port: +Bun.env.REDIS_PORT,
           password: Bun.env.REDIS_PASSWORD,
-          db: Bun.env.REDIS_DB,
+          db: +Bun.env.REDIS_DB,
           keyPrefix: Bun.env.REDIS_PREFIX,
         });
       },

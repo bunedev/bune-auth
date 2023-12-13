@@ -10,12 +10,12 @@ export class AuthResolver {
 
   @Mutation(() => User)
   async signup(@Args() args: SignupArgs): Promise<User> {
-    return await this.authService.signup(args);
+    return (await this.authService.signup(args)) as any;
   }
 
   @Mutation(() => User)
   async login(@Args() args: LoginArgs): Promise<User> {
-    return await this.authService.login(args);
+    return (await this.authService.login(args)) as any;
   }
 
   /**
