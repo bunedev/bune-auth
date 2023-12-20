@@ -27,3 +27,4 @@ EXPOSE 9697
 
 # Run the NestJS application using "bun dev" as the command
 CMD [ "bun", "dev" ]
+ 
