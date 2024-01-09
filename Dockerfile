@@ -5,7 +5,7 @@ FROM oven/bun:latest
 WORKDIR /app
 
 # Update the package manager and install OpenSSL
-RUN apt-get -qy update && apt-get -qy install openssl
+RUN apt-get -qy update && apt-get -qy install openssl curl
 
 RUN curl -sL https://deb.nodesource.com/setup_21.x | bash -
 RUN apt-get install -y nodejs
@@ -20,7 +20,7 @@ COPY prisma ./prisma/
 RUN bun install
 
 # Generate Prisma client code
-RUN bun prisma:generate
+RUN bunx prisma generate
 
 # Copy the rest of the application files to the container
 COPY . .
