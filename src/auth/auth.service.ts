@@ -34,7 +34,10 @@ export class AuthService {
     const data = args.data;
 
     const code = await this.redisService.get(`signup_${data.email}`);
-    if (code! || code != data.code) {
+    console.log('codecode', code);
+    console.log('code.req', data.code);
+    if (Number(code) !== Number(data.code)) {
+      console.log('aaaaaaaaa');
       throw createGraphQLError(
         HttpStatus.BAD_REQUEST,
         ErrorMessages.InvalidOTP,
@@ -80,7 +83,7 @@ export class AuthService {
           username: username,
           phone: data.phone,
           email: data.email,
-          dateOfBirth: new Date(data.dateOfBirth),
+          dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
         },
       });
     }
@@ -96,7 +99,7 @@ export class AuthService {
         username: username,
         phone: data.phone,
         email: data.email,
-        dateOfBirth: new Date(data.dateOfBirth),
+        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
       },
     });
   }
@@ -187,13 +190,20 @@ export class AuthService {
       code,
       CACHE_TTL.FIVE_MINUTES,
     );
-    await this.mailService.userRegister({
-      data: {
-        code: code.toString(),
-        subject: `Register Account`,
-      },
-      to: data.email,
-    });
+    try {
+      await this.mailService.userRegister({
+        data: {
+          code: code.toString(),
+          subject: `Register Account`,
+        },
+        to: data.email,
+      });
+    } catch (error) {
+      return false;
+    }
+
+    console.log('code', code);
+
     return true;
   }
 }
