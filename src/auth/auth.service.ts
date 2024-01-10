@@ -34,10 +34,7 @@ export class AuthService {
     const data = args.data;
 
     const code = await this.redisService.get(`signup_${data.email}`);
-    console.log('codecode', code);
-    console.log('code.req', data.code);
     if (Number(code) !== Number(data.code)) {
-      console.log('aaaaaaaaa');
       throw createGraphQLError(
         HttpStatus.BAD_REQUEST,
         ErrorMessages.InvalidOTP,
