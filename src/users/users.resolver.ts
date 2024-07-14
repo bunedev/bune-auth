@@ -5,7 +5,7 @@ import {
   Resolver,
   ResolveReference,
 } from '@nestjs/graphql';
-import { User } from './user';
+import { User } from '../@generated/user/user.model';
 import { UsersService } from './users.service';
 
 @Resolver(() => User)
