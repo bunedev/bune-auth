@@ -1,6 +1,6 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { SignupArgs } from '../auth/base/args/SignupArgs';
-import { User } from 'src/users/user';
+import { User } from '../@generated/user/user.model';
 import { AuthService } from './auth.service';
 import { LoginArgs, SendOtpArgs } from './base/args';
 
