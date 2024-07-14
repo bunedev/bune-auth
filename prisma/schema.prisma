@@ -4,6 +4,42 @@
 generator client {
   provider = "prisma-client-js"
   binaryTargets = ["native", "linux-arm64-openssl-1.0.x", "debian-openssl-1.1.x"]
+  previewFeatures = ["fullTextSearch"]
+
+}
+
+
+generator nestgraphql {
+  provider = "prisma-nestjs-graphql"
+  output                                = "../src/@generated"
+  noAtomicOperations                    = false
+  combineScalarFilters                  = false
+  reExport                              = None
+  emitSingle                            = false
+  emitCompiled                          = false
+  purgeOutput                           = false
+  requireSingleFieldsInWhereUniqueInput = false
+  fields_Validator_from                 = "class-validator"
+  fields_Validator_input                = true
+  fields_Scalars_from                   = "graphql-scalars"
+  fields_Scalars_input                  = true
+  useInputType_WhereInput_ALL           = "WhereInput"
+  decorate_1_type                       = "Create@(One|Many)UserArgs"
+  decorate_1_field                      = data
+  decorate_1_name                       = ValidateNested
+  decorate_1_from                       = "class-validator"
+  decorate_1_arguments                  = "[]"
+  decorate_2_type                       = "Create@(One|Many)UserArgs"
+  decorate_2_field                      = data
+  decorate_2_from                       = "class-transformer"
+  decorate_2_arguments                  = "['() => {propertyType.0}']"
+  decorate_2_name                       = Type
+  decorate_2_namedImport                = true
+  decorate_3_type                       = "ProfileUncheckedCreateNestedOneWithoutUserInput"
+  decorate_3_field                      = "!(create)"
+  decorate_3_name                       = "HideField"
+  decorate_3_from                       = "@nestjs/graphql"
+  decorate_3_arguments                  = "[]"
 }
 
 datasource db {
@@ -12,11 +48,16 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   name      String?
-  email     String  @default("") 
-  username  String  @default("") 
-  passwordHash String @default("") 
+  /// @FieldType('Scalars.GraphQLEmailAddress')
+  email     String    @unique
+  
+  /// @Validator.MinLength(3)
+  /// @Validator.MaxLength(50)
+  username  String    @unique @default(cuid())
+  /// @HideField()
+  password String 
   profilePicture   String?
   dateOfBirth     DateTime?
   phone     String? 
@@ -27,12 +68,16 @@ model User {
   loginMethod LoginMethod @default(LOCAL)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
   roleId    String?
   role      Role?    @relation(fields: [roleId], references: [id])
+
+  @@unique([email, username])
+
 }
 
 model Role {
-  id String @id @default(uuid())
+  id String @id @default(cuid())
   key String  @unique
   name String?
   description String?
@@ -44,7 +89,7 @@ model Role {
 }
 
 model Permission {
-  id          String       @id @default(uuid())
+  id          String       @id @default(cuid())
   action      String? 
   subject    String? 
   inverted    Boolean? @default(false)
